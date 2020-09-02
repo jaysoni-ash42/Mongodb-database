@@ -3,45 +3,96 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
 
 var dishes = require("./routes/dishroutes");
 var leaders = require("./routes/leadersrouter");
 var promotions = require("./routes/promotionsrouter");
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-const Dishes = require("./models/dishes");
+const session = require('express-session');
+var filestore=require('session-file-store')(session);
 
 var app = express();
 
-const url="mongodb://127.0.0.1:27017/conFusion";
+const url = "mongodb://127.0.0.1:27017/conFusion";
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.use('/',dishes);
-app.use('/',leaders);
-app.use('/',promotions);
+
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+//app.use(cookieParser('12345-67890-65987-78546'));
+app.use(session({
+  name:'session-id',
+  secret:'12345-67890-65987-78546',
+  saveUninitialized:false,
+  resave:false,
+  store:new filestore()
+  }));
+
+function auth(req, res, next) {
+  if (!req.session.user) {
+    var authname = req.headers.authorization;
+    if (!authname) {
+      var error = new Error('You are not authtified!');
+      res.setHeader('www-Authenticate','Basic');
+      error.status=401;
+      return next(error);
+    }
+    else {
+      var authtified = new Buffer.from(authname.split(' ')[1], 'base64').toString().split(':');
+      if (authtified[0] === 'admin' && authtified[1] === 'password') {
+       req.session.user='admin';
+        next();
+      }
+      else {
+        var error = new Error('You are not authtified!');
+        res.setHeader('www-Authenticate','Basic');
+        error.status=401;
+        return next(error);
+      }
+    }
+
+  }
+  else {
+    if(req.session.user=='admin')
+    {
+      console.log('req.expresssession:'+req.session);
+        next();
+    }
+    else{
+      var error = new Error('You are not authtified!');
+      error.status=401;
+      return next(error);
+    }
+
+
+  }
+}
+app.use(auth);
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/', dishes);
+app.use('/', leaders);
+app.use('/', promotions);
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-mongoose.connect(url,{ useNewUrlParser: true,useUnifiedTopology: true }).then((db)=>{
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then((db) => {
   console.log("connected to server");
-}).catch((err)=> console.log(err));
+}).catch((err) => console.log(err));
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -49,6 +100,7 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+  console.log(err);
 });
 
 
