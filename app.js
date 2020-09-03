@@ -33,33 +33,17 @@ app.use(session({
   resave:false,
   store:new filestore()
   }));
-
+  app.use('/',indexRouter);
+  app.use('/users', usersRouter);
 function auth(req, res, next) {
   if (!req.session.user) {
-    var authname = req.headers.authorization;
-    if (!authname) {
-      var error = new Error('You are not authtified!');
+      var error = new Error('You are not authenfied');
       res.setHeader('www-Authenticate','Basic');
       error.status=401;
       return next(error);
-    }
-    else {
-      var authtified = new Buffer.from(authname.split(' ')[1], 'base64').toString().split(':');
-      if (authtified[0] === 'admin' && authtified[1] === 'password') {
-       req.session.user='admin';
-        next();
-      }
-      else {
-        var error = new Error('You are not authtified!');
-        res.setHeader('www-Authenticate','Basic');
-        error.status=401;
-        return next(error);
-      }
-    }
-
   }
   else {
-    if(req.session.user=='admin')
+    if(req.session.user=='authentified')
     {
       console.log('req.expresssession:'+req.session);
         next();
@@ -80,7 +64,6 @@ app.use('/', dishes);
 app.use('/', leaders);
 app.use('/', promotions);
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then((db) => {
   console.log("connected to server");
