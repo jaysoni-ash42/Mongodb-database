@@ -3,10 +3,12 @@ const express = require('express');
 const dishroutes = express.Router();
 dishroutes.use(bodyparser.json());
 const Dishes = require('../models/dishes');
+var authenticate = require('../authentication');
 dishroutes.route('/dishes')
     .get((req, res, next) => {
 
-        Dishes.find({}).exec()
+        Dishes.find({})
+        .populate('comments:author')
             .then((dish) => {
                 res.statusCode = 200;
                 res.setHeader("Cotent-Type", 'application/json');
@@ -14,7 +16,7 @@ dishroutes.route('/dishes')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post((req, res, next) => {
+    .post(authenticate.verify,(req, res, next) => {
         Dishes.create(req.body).then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -24,35 +26,36 @@ dishroutes.route('/dishes')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verify,(req, res, next) => {
         Dishes.remove({}).then((resp) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
             res.json(resp);
             console.log("dishes deleted");
-        }, (err) => next(err)).catch((err) => console.log(err));
+        }, (err) => {res.statusCode=500;res.setHeader("Cotent-Type", 'application/json');
+                        res.json({err:err})}).catch((err) => console.log(err));
 
     })
-    .put((req, res, next) => {
+    .put(authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
     });
 
 dishroutes.route('/dishes/:dishId')
-    .get((req, res, next) => {
-        Dishes.findById(req.params.dishId).then((dish) => {
+    .get((req, res, next)  => {
+        Dishes.findById(req.params.dishId) .populate('comments:author').then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
             res.json(dish)
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post((req, res, next) => {
+    .post(authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("post operations are not supported on dishes");
 
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verify,(req, res, next) => {
         Dishes.findOneAndRemove(req.params.dishId).then((resp) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -61,7 +64,7 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put((req, res, next) => {
+    .put(authenticate.verify,(req, res, next) => {
         Dishes.findOneAndUpdate(req.params.dishId, { $set: req.body }, { new: true }).exec().then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -71,6 +74,7 @@ dishroutes.route('/dishes/:dishId')
 dishroutes.route('/dishes/:dishId/comments')
     .get((req, res, next) => {
         Dishes.findById(req.params.dishId)
+        .populate('comments:author')
             .then((dish) => {
                 if (dish != null) {
                     res.statusCode = 200;
@@ -86,15 +90,20 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post((req, res, next) => {
+    .post(authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
+                    req.body.author = req.user._id;
                     dish.comments.push(req.body);
                     dish.save().then((dish) => {
-                        res.statusCode = 200;
-                        res.setHeader("Cotent-Type", 'application/json');
-                        res.json(dish.comments);
+                        Dishes.findById(dish._id)
+                        .populate('comments:author')
+                        .then((dish)=>{
+                            res.statusCode = 200;
+                            res.setHeader("Cotent-Type", 'application/json');
+                            res.json(dish.comments);
+                        });
                     }, (err) => next(err));
                 }
                 else {
@@ -106,7 +115,7 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
@@ -127,13 +136,14 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put((req, res, next) => {
+    .put(authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
     });
 dishroutes.route('/dishes/:dishId/comments/:commentsId')
     .get((req, res, next) => {
         Dishes.findById(req.params.dishId)
+        .populate('comments:author')
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
                     res.statusCode = 200;
@@ -149,20 +159,24 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post((req, res, next) => {
+    .post(authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("post operation not supported" + req.params.dishId + req.params.commentsId);
 
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
                     dish.comments.id(req.params.commentsId).remove();
                     dish.save().then((dish) => {
-                        res.statusCode = 200;
-                        res.setHeader("Cotent-Type", 'application/json');
-                        res.json(dish);
+                        Dishes.findById(dish._id)
+                        .populate('comments:author')
+                        .then((dish)=>{
+                            res.statusCode = 200;
+                            res.setHeader("Cotent-Type", 'application/json');
+                            res.json(dish);
+                        })
                     }, (err) => next(err));
                 }
                 else {
@@ -173,7 +187,7 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put((req, res, next) => {
+    .put(authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
@@ -184,9 +198,13 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
                         dish.comments.id(req.params.commentsId).comment = req.body.comment;
                     }
                     dish.save().then((dish) => {
-                        res.statusCode = 200;
-                        res.setHeader("Cotent-Type", 'application/json');
-                        res.json(dish);
+                        Dishes.findById(dish._id)
+                        .populate('comments:author')
+                        .then((dish)=>{
+                            res.statusCode = 200;
+                            res.setHeader("Cotent-Type", 'application/json');
+                            res.json(dish);
+                        })
                     }, (err) => next(err));
 
                 }
