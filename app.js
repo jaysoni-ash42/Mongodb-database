@@ -57,6 +57,7 @@ app.use('/', dishes);
 app.use('/', leaders);
 app.use('/', promotions);
 app.use('/', indexRouter);
+mongoose.Promise=require('bluebird');
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then((db) => {
   console.log("connected to server");

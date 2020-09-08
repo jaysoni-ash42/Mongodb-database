@@ -14,7 +14,7 @@ promotions.route('/promotions')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Promotions.create(req.body).then((promotion) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -22,12 +22,12 @@ promotions.route('/promotions')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
 
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Promotions.deleteOne({}).then((resp) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -44,12 +44,12 @@ promotions.route('/promotions/:promotionId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Promotions.findOneAndUpdate(req.params.promotionId, { $set: req.body }, { new: true }).then((promotion) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -57,7 +57,7 @@ promotions.route('/promotions/:promotionId')
 
         }, (err) => next(err)).catch((err) => console.log(err))
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Promotions.findOneAndDelete(req.params.promotionId).then((resp) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');

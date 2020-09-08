@@ -4,6 +4,7 @@ const dishroutes = express.Router();
 dishroutes.use(bodyparser.json());
 const Dishes = require('../models/dishes');
 var authenticate = require('../authentication');
+const { Unauthorized } = require('http-errors');
 dishroutes.route('/dishes')
     .get((req, res, next) => {
 
@@ -16,17 +17,18 @@ dishroutes.route('/dishes')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+     
         Dishes.create(req.body).then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
             res.json(dish)
             console.log("Dish created" + dish);
-
+            
         }, (err) => next(err)).catch((err) => console.log(err));
-
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+       
         Dishes.remove({}).then((resp) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -36,7 +38,7 @@ dishroutes.route('/dishes')
                         res.json({err:err})}).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
     });
@@ -50,12 +52,12 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("post operations are not supported on dishes");
 
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findOneAndRemove(req.params.dishId).then((resp) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -64,7 +66,7 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findOneAndUpdate(req.params.dishId, { $set: req.body }, { new: true }).exec().then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -115,7 +117,7 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
@@ -168,6 +170,8 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
+                    if(dish.comments.id(req.params.commentsId).author.equals(req.user._id))
+                    {
                     dish.comments.id(req.params.commentsId).remove();
                     dish.save().then((dish) => {
                         Dishes.findById(dish._id)
@@ -175,9 +179,15 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
                         .then((dish)=>{
                             res.statusCode = 200;
                             res.setHeader("Cotent-Type", 'application/json');
-                            res.json(dish);
+                            res.json({status:true,comment:"deleted"});
                         })
                     }, (err) => next(err));
+                }
+                else{
+                    err=new Error("you are not authoried");
+                    err.statuscode=401;
+                    return next(err);
+                }
                 }
                 else {
                     err = new Error('Dish' + req.params.dishId + 'not found');
@@ -191,6 +201,8 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
+                    if(dish.comments.id(req.params.commentsId).author.equals(req.user._id))
+                    {
                     if (req.body.rating) {
                         dish.comments.id(req.params.commentsId).rating = req.body.rating;
                     }
@@ -206,6 +218,13 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
                             res.json(dish);
                         })
                     }, (err) => next(err));
+                }
+                else{
+                    err=new Error("you are not authoried");
+                    err.statusCode=403;
+                    return next(err);
+
+                }
 
                 }
                 else {
