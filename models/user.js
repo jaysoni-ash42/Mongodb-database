@@ -15,6 +15,10 @@ var user = new scheme({
         type: Boolean,
         default: false
 
+    },
+    image:{
+        data:Buffer,
+        type:String
     }
 });
 user.plugin(passportlocalmongoose);

@@ -30,7 +30,6 @@ exports.jwtpassport = passport.use(new JwtStrategy(opt,function (jwt_payload, do
                 return done(null,user);
             }
             else{
-                console.log('thalla');
                 return done(null,false);
             }
 

@@ -6,7 +6,7 @@ var logger = require('morgan');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const config = require('./config');
-
+var upload = require("./routes/uploadrouter");
 var dishes = require("./routes/dishroutes");
 var leaders = require("./routes/leadersrouter");
 var promotions = require("./routes/promotionsrouter");
@@ -53,6 +53,7 @@ app.use('/users', usersRouter);
 app.use(auth); */
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/',upload);
 app.use('/', dishes);
 app.use('/', leaders);
 app.use('/', promotions);
