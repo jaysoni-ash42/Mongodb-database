@@ -4,6 +4,7 @@ const upload = express.Router();
 const authenticate = require('../authentication');
 const multer = require('multer');
 const Users=require('../models/user');
+const cors = require('../cors');
 upload.use(bodyparser.json());
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -23,50 +24,56 @@ const imagefileFilter = (req, file, cb) => {
 var uploadata = multer({ storage: storage, fileFilter:imagefileFilter });
 
 upload.route('/uploadimage')
-    .get(authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
+    .options(cors.corsoptions,(req,res)=>{
+        res.statusCode=200;
+    })
+    .get(cors.cors,authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
 
         res.statusCode = 403;
         res.setHeader('Content-Type', 'plain/text');
         res.end("get cannot be done in this operation");
 
     })
-    .put(authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'plain/text');
         res.end("get cannot be done in this operation");
 
     })
-    .post(authenticate.verify, authenticate.verifyadmin, uploadata.single('imageFile'), (req, res) => {
+    .post(cors.corsoptions,authenticate.verify, authenticate.verifyadmin, uploadata.single('imageFile'), (req, res) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(req.file);
     })
-    .delete(authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'text/plain');
         res.end("get cannot be done in this operation");
 
     });
     upload.route('/uploadprofile')
-    .get(authenticate.verify, (req, res, next) => {
+    .options(cors.corsoptions,(req,res)=>{
+        res.statusCode=200;
+    })
+    .get(cors.cors,authenticate.verify, (req, res, next) => {
 
         res.statusCode = 403;
         res.setHeader('Content-Type', 'plain/text');
         res.end("get cannot be done in this operation");
 
     })
-    .put(authenticate.verify, (req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify, (req, res, next) => {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'plain/text');
         res.end("get cannot be done in this operation");
 
     })
-    .post(authenticate.verify, uploadata.single('imageFile'), (req, res) => {
+    .post(cors.corsoptions,authenticate.verify, uploadata.single('imageFile'), (req, res) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(req.file);
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'text/plain');
         res.end("get cannot be done in this operation");

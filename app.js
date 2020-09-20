@@ -6,6 +6,7 @@ var logger = require('morgan');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const config = require('./config');
+var favourite=require("./routes/favouriterouter");
 var upload = require("./routes/uploadrouter");
 var dishes = require("./routes/dishroutes");
 var leaders = require("./routes/leadersrouter");
@@ -22,7 +23,16 @@ const url = config.url;
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+app.all('*',(req,res,next)=>{
+  if(req.secure)
+  {
+    return next();
+  }
+  else{
+    res.redirect(307,'https://'+req.hostname+':'+app.get('secureport')+req.url);
 
+  }
+});
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -54,6 +64,7 @@ app.use(auth); */
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/',upload);
+app.use('/',favourite);
 app.use('/', dishes);
 app.use('/', leaders);
 app.use('/', promotions);

@@ -15,7 +15,7 @@ const commentschema = new schema({
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Users'
+        ref: 'user'
 
     }
 },

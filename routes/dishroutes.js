@@ -5,8 +5,12 @@ dishroutes.use(bodyparser.json());
 const Dishes = require('../models/dishes');
 var authenticate = require('../authentication');
 const { Unauthorized } = require('http-errors');
+var cors=require('../cors');
 dishroutes.route('/dishes')
-    .get((req, res, next) => {
+    .options(cors.corsoptions,(req,res)=>{
+        res.statusCode=200;
+    })
+    .get(cors.cors,(req, res, next) => {
 
         Dishes.find({})
         .populate('comments:author')
@@ -17,7 +21,7 @@ dishroutes.route('/dishes')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .post(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
      
         Dishes.create(req.body).then((dish) => {
             res.statusCode = 200;
@@ -27,7 +31,7 @@ dishroutes.route('/dishes')
             
         }, (err) => next(err)).catch((err) => console.log(err));
     })
-    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
        
         Dishes.remove({}).then((resp) => {
             res.statusCode = 200;
@@ -38,13 +42,16 @@ dishroutes.route('/dishes')
                         res.json({err:err})}).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
     });
 
 dishroutes.route('/dishes/:dishId')
-    .get((req, res, next)  => {
+.options(cors.corsoptions,(req,res)=>{
+    res.statusCode=200;
+})
+    .get(cors.cors,(req, res, next)  => {
         Dishes.findById(req.params.dishId) .populate('comments:author').then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -52,12 +59,12 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .post(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         res.statusCode = 403;
         res.end("post operations are not supported on dishes");
 
     })
-    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findOneAndRemove(req.params.dishId).then((resp) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -66,7 +73,7 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findOneAndUpdate(req.params.dishId, { $set: req.body }, { new: true }).exec().then((dish) => {
             res.statusCode = 200;
             res.setHeader("Cotent-Type", 'application/json');
@@ -74,7 +81,10 @@ dishroutes.route('/dishes/:dishId')
         }, (err) => next(err)).catch((err) => console.log(err));
     });
 dishroutes.route('/dishes/:dishId/comments')
-    .get((req, res, next) => {
+.options(cors.corsoptions,(req,res)=>{
+    res.statusCode=200;
+})
+    .get(cors.cors,(req, res, next) => {
         Dishes.findById(req.params.dishId)
         .populate('comments:author')
             .then((dish) => {
@@ -92,7 +102,7 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(cors.corsoptions,authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
@@ -117,7 +127,7 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null) {
@@ -138,12 +148,15 @@ dishroutes.route('/dishes/:dishId/comments')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
     });
 dishroutes.route('/dishes/:dishId/comments/:commentsId')
-    .get((req, res, next) => {
+.options(cors.corsoptions,(req,res)=>{
+    res.statusCode=200;
+})
+    .get(cors.cors,(req, res, next) => {
         Dishes.findById(req.params.dishId)
         .populate('comments:author')
             .then((dish) => {
@@ -161,12 +174,12 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,(req, res, next) => {
+    .post(cors.corsoptions,authenticate.verify,(req, res, next) => {
         res.statusCode = 403;
         res.end("post operation not supported" + req.params.dishId + req.params.commentsId);
 
     })
-    .delete(authenticate.verify,(req, res, next) => {
+    .delete(cors.corsoptions,authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {
@@ -197,7 +210,7 @@ dishroutes.route('/dishes/:dishId/comments/:commentsId')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,(req, res, next) => {
+    .put(cors.corsoptions,authenticate.verify,(req, res, next) => {
         Dishes.findById(req.params.dishId)
             .then((dish) => {
                 if (dish != null && dish.comments.id(req.params.commentsId) != null) {

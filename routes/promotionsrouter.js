@@ -4,8 +4,12 @@ const promotions = express.Router();
 promotions.use(bodyparser.json());
 const Promotions = require('../models/promotions');
 const authenticate = require('../authentication');
+var cors = require('../cors');
 promotions.route('/promotions')
-    .get((req, res, next) => {
+    .options(cors.corsoptions, (req, res) => {
+        res.statusCode = 200;
+    })
+    .get(cors.cors, (req, res, next) => {
         Promotions.find({})
             .then((promotion) => {
                 res.statusCode = 200;
@@ -14,7 +18,7 @@ promotions.route('/promotions')
             }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .post(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         Promotions.create(req.body).then((promotion) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -22,12 +26,12 @@ promotions.route('/promotions')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .put(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
 
     })
-    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .delete(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         Promotions.deleteOne({}).then((resp) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -36,7 +40,10 @@ promotions.route('/promotions')
 
     });
 promotions.route('/promotions/:promotionId')
-    .get((req, res, next) => {
+    .options(cors.corsoptions, (req, res) => {
+        res.statusCode = 200;
+    })
+    .get(cors.cors, (req, res, next) => {
         Promotions.findById(req.params.promotionId).then((promotion) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -44,12 +51,12 @@ promotions.route('/promotions/:promotionId')
         }, (err) => next(err)).catch((err) => console.log(err));
 
     })
-    .post(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .post(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         res.statusCode = 403;
         res.end("authorization denied");
 
     })
-    .put(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .put(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         Promotions.findOneAndUpdate(req.params.promotionId, { $set: req.body }, { new: true }).then((promotion) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
@@ -57,7 +64,7 @@ promotions.route('/promotions/:promotionId')
 
         }, (err) => next(err)).catch((err) => console.log(err))
     })
-    .delete(authenticate.verify,authenticate.verifyadmin,(req, res, next) => {
+    .delete(cors.corsoptions, authenticate.verify, authenticate.verifyadmin, (req, res, next) => {
         Promotions.findOneAndDelete(req.params.promotionId).then((resp) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');

@@ -6,6 +6,7 @@ var router = express.Router();
 router.use(bodyparser.json());
 var passport = require('passport');
 var authenticate = require('../authentication');
+var cors= require('../cors');
 
 /* GET users listing. */
 
